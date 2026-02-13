@@ -7,72 +7,138 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-  margin: 0;
-  padding: 40px 20px;
-  font-family: system-ui, sans-serif;
-  max-width: 600px;
-  margin-inline: auto;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+
+:root {
+  --black-deep: #010203;
+  --black-soft: #070a0e;
+  --panel-bg: rgba(14, 18, 22, 0.92);
+
+  --accent: #7f9db4;
+  --text-main: #e6ebef;
+  --text-muted: #aab3bb;
+  --line-soft: rgba(255,255,255,0.06);
 }
 
-h1 {
+body {
+  margin: 0;
+  padding: 40px 22px 72px;
+  max-width: 420px;
+  margin-inline: auto;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(140% 70% at 50% -25%, rgba(140,180,210,0.07), transparent 60%),
+    linear-gradient(135deg, #010203 0%, #04070b 40%, #010203 80%);
+  background-color: var(--black-deep);
+  background-attachment: fixed;
+}
+
+h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 38px;
 }
 
 .card {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--panel-bg);
+  border-radius: 22px;
+  padding: 28px;
+  margin-bottom: 40px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    0 30px 60px rgba(0,0,0,0.65);
+}
+
+#vehicleTitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 30px;
+  color: var(--accent);
+}
+
+input, select, textarea {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 auto 24px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: rgba(6, 8, 10, 0.95);
+  color: var(--text-main);
+  font-size: 15px;
+  box-sizing: border-box;
 }
 
 button {
   width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: none;
-  background: black;
-  color: white;
+  padding: 14px 0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #1a1f25, #0c1015);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-main);
+  font-weight: 500;
+  margin-bottom: 28px;
   cursor: pointer;
 }
 
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+#historyList .card {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-soft);
 }
 
-textarea {
-  min-height: 80px;
+#historyList .card:last-child {
+  border-bottom: none;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Historia serwisowa</h1>
+<h2>MotoServiceStory</h2>
 
-<div id="vehicleInfo" class="card"></div>
+<div id="vehicleView" class="card">
+  <h3 id="vehicleTitle"></h3>
 
-<div id="history" class="card"></div>
+  <div class="tabs">
+    <button onclick="showTab('entry')">Wpis</button>
+    <button onclick="showTab('history')">Historia</button>
+  </div>
 
-<div class="card">
-  <h3>Dodaj wpis</h3>
-  <input type="text" id="type" placeholder="Typ (np. olej, opony)">
-  <input type="number" id="mileage" placeholder="Przebieg">
-  <textarea id="note" placeholder="Notatka"></textarea>
-  <button onclick="addEntry()">Zapisz wpis</button>
-  <p id="status"></p>
+  <div id="entryTab">
+    <select id="type">
+      <option value="olej">Olej</option>
+      <option value="naped">Napęd</option>
+      <option value="opony">Opony</option>
+      <option value="tarcze">Tarcze hamulcowe</option>
+      <option value="klocki">Klocki hamulcowe</option>
+      <option value="plyn">Płyn hamulcowy</option>
+      <option value="lagi">Olej w lagach</option>
+      <option value="mechaniczne">Naprawy mechaniczne</option>
+    </select>
+
+    <input id="title" placeholder="Tytuł">
+    <input id="mileage" type="number" placeholder="Przebieg">
+    <input id="date" type="date">
+    <textarea id="note" placeholder="Notatka"></textarea>
+
+    <button onclick="addEntry()">Zapisz wpis</button>
+    <p id="status"></p>
+  </div>
+
+  <div id="historyTab" class="hidden">
+    <div id="historyList"></div>
+  </div>
 </div>
 
 <script>
 const SUPABASE_URL = 'https://thmcpoehpycqfbgpdjyf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWNwb2VocHljcWZiZ3BkanlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4Njc5NTYsImV4cCI6MjA4NDQ0Mzk1Nn0.m4CHKbi6nDSlY_WZdiCZCXKt97tY9uICsbAGSvYHFBw'; // <- wklej swój
-
+const SUPABASE_KEY = 'TWOJ_PUBLIC_ANON_KEY';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const params = new URLSearchParams(window.location.search);
@@ -99,48 +165,27 @@ async function init() {
   }
 
   vehicleId = vehicle.id;
-
-  document.getElementById("vehicleInfo").innerHTML = `
-    <b>${vehicle.name}</b><br>
-    Aktualny przebieg: ${vehicle.current_mileage} km
-  `;
+  vehicleTitle.innerText = vehicle.name;
 
   loadHistory();
 }
 
 async function loadHistory() {
-
   const { data } = await db
     .from("service_reports")
     .select("*")
     .eq("vehicle_id", vehicleId)
     .order("date", { ascending: false });
 
-  const historyDiv = document.getElementById("history");
-
-  if (!data || data.length === 0) {
-    historyDiv.innerHTML = "<i>Brak wpisów</i>";
-    return;
-  }
-
-  historyDiv.innerHTML = data.map(r => `
-    <div style="margin-bottom:12px;">
-      <b>${r.date}</b> – ${r.type} (${r.mileage || "-"} km)<br>
-      ${r.note || ""}
+  historyList.innerHTML = (data || []).map(r => `
+    <div class="card">
+      <b>${r.date}</b> – ${r.type}<br>
+      ${r.note || ''}
     </div>
   `).join("");
 }
 
 async function addEntry() {
-
-  const type = document.getElementById("type").value;
-  const mileage = document.getElementById("mileage").value;
-  const note = document.getElementById("note").value;
-
-  if (!type) {
-    alert("Podaj typ wpisu");
-    return;
-  }
 
   const res = await fetch(
     `${SUPABASE_URL}/functions/v1/add-public-entry`,
@@ -152,24 +197,28 @@ async function addEntry() {
       },
       body: JSON.stringify({
         token,
-        type,
-        mileage,
-        note
+        type: type.value,
+        title: type.value === 'mechaniczne' ? title.value : null,
+        mileage: mileage.value,
+        date: date.value,
+        note: note.value
       })
     }
   );
 
   if (!res.ok) {
-    document.getElementById("status").innerText = "Błąd zapisu";
+    status.innerText = "Błąd zapisu";
     return;
   }
 
-  document.getElementById("status").innerText = "Zapisano ✔";
-  document.getElementById("type").value = "";
-  document.getElementById("mileage").value = "";
-  document.getElementById("note").value = "";
-
+  status.innerText = "Zapisano ✔";
+  type.value = mileage.value = date.value = note.value = title.value = "";
   loadHistory();
+}
+
+function showTab(tab) {
+  entryTab.classList.toggle('hidden', tab !== 'entry');
+  historyTab.classList.toggle('hidden', tab !== 'history');
 }
 
 init();
@@ -177,3 +226,4 @@ init();
 
 </body>
 </html>
+
