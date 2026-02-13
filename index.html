@@ -367,36 +367,69 @@ let userPlan = 'free';
 
 /* ===== LOGIN ===== */
 loginBtn.onclick = async () => {
+
+  const acceptCheckbox = document.getElementById("acceptLoginTerms");
+
+  // 1️⃣ Sprawdzenie akceptacji regulaminu
+  if (!acceptCheckbox || !acceptCheckbox.checked) {
+    loginStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
+    loginStatus.style.color = "#ff0000";
+    loginStatus.style.fontWeight = "700";
+    return;
+  }
+
+  loginStatus.innerText = "Wysyłanie linku logowania...";
+  loginStatus.style.color = "#ffffff";
+  loginStatus.style.fontWeight = "500";
+
   const { error } = await db.auth.signInWithOtp({
     email: email.value
   });
 
-  loginStatus.innerText = error ? error.message : 'Sprawdź email';
+  loginStatus.innerText = error ? error.message : "Sprawdź email";
 };
 
 
+/* ===== BOOTSTRAP ===== */
 async function bootstrap() {
   const { data } = await db.auth.getSession();
   if (data.session?.user) initApp(data.session.user);
 }
 bootstrap();
 
+
 db.auth.onAuthStateChange((_, session) => {
   if (session?.user) initApp(session.user);
 });
 
+
+/* ===== INIT APP ===== */
 async function initApp(user) {
+
   currentUser = user;
+
   login.classList.add('hidden');
   app.classList.remove('hidden');
 
-  const { data } = await db
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
+  // 🔐 Sprawdzenie i zapis akceptacji regulaminu
+  const { data: profileData } = await db
+    .from("profiles")
+    .select("plan, terms_accepted")
+    .eq("id", user.id)
     .single();
 
-  userPlan = data?.plan || 'free';
+  if (!profileData?.terms_accepted) {
+    await db
+      .from("profiles")
+      .update({
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString()
+      })
+      .eq("id", user.id);
+  }
+
+  userPlan = profileData?.plan || 'free';
+
   paywall.classList.toggle('hidden', userPlan === 'premium');
 
   loadVehicles();
