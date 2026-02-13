@@ -453,6 +453,8 @@ addVehicleBtn.onclick = async () => {
     return;
   }
 
+addVehicleBtn.onclick = async () => {
+
   // LIMIT FREE – tylko 1 pojazd
   if (userPlan === 'free') {
     const { data } = await db
@@ -486,6 +488,7 @@ addVehicleBtn.onclick = async () => {
 
   loadVehicles();
 };
+
 
 
   await db.from('vehicles').insert({
