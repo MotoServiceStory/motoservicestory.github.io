@@ -429,17 +429,36 @@ async function initApp(user) {
 
 /* ===== VEHICLES ===== */
 async function loadVehicles() {
-  const { data } = await db.from('vehicles').select('*');
+
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) return;
+
+  const userId = session.user.id;
+
+  const { data, error } = await db
+    .from('vehicles')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
   vehicles.innerHTML = '';
-  data.forEach(v => {
+
+  (data || []).forEach(v => {
     vehicles.innerHTML += `
       <div class="card">
         <b>${v.name}</b> (${v.current_mileage} km)<br>
-        <button onclick="openVehicle(${JSON.stringify(v).replace(/"/g,'&quot;')})">Otwórz</button>
+        <button onclick="openVehicle(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+          Otwórz
+        </button>
       </div>
     `;
   });
 }
+
 
 addVehicleBtn.onclick = async () => {
 
@@ -459,10 +478,16 @@ addVehicleBtn.onclick = async () => {
 
   // LIMIT FREE – tylko 1 pojazd
   if (userPlan === 'free') {
-    const { data } = await db
+    const { data, error } = await db
       .from('vehicles')
       .select('id')
       .eq('user_id', userId);
+
+    if (error) {
+      console.error(error);
+      alert("Błąd sprawdzania limitu");
+      return;
+    }
 
     if ((data?.length || 0) >= 1) {
       alert('Konto FREE: maksymalnie 1 pojazd');
@@ -487,7 +512,7 @@ addVehicleBtn.onclick = async () => {
   vehicleName.value = '';
   vehicleMileage.value = '';
 
-  loadVehicles();
+  await loadVehicles();
 };
 
 
