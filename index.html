@@ -516,17 +516,6 @@ addVehicleBtn.onclick = async () => {
 };
 
 
-
-
-  await db.from('vehicles').insert({
-    name: vehicleName.value,
-    current_mileage: vehicleMileage.value
-  });
-
-  vehicleName.value = vehicleMileage.value = '';
-  loadVehicles();
-};
-
 /* ===== QR ADD ===== */
 async function generateQR() {
 
