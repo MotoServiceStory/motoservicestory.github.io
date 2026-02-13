@@ -230,13 +230,6 @@ async function addEntry() {
   }
 }
 
-
-
-  status.innerText = "Zapisano ✔";
-  type.value = mileage.value = date.value = note.value = title.value = "";
-  loadHistory();
-}
-
 function showTab(tab) {
   entryTab.classList.toggle('hidden', tab !== 'entry');
   historyTab.classList.toggle('hidden', tab !== 'history');
@@ -244,6 +237,7 @@ function showTab(tab) {
 
 init();
 </script>
+
 
 </body>
 </html>
