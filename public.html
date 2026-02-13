@@ -206,10 +206,11 @@ async function addEntry() {
     }
   );
 
-  if (!res.ok) {
-    status.innerText = "Błąd zapisu";
-    return;
-  }
+ if (!res.ok) {
+  const msg = await res.text();
+  status.innerText = msg;
+  return;
+}
 
   status.innerText = "Zapisano ✔";
   type.value = mileage.value = date.value = note.value = title.value = "";
