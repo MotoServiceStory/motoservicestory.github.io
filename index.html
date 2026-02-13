@@ -267,7 +267,17 @@ button {
 
 <div id="paywall" class="paywall hidden">
   <b>🔒 Konto FREE</b><br><br>
-  <button onclick="startSubscription()">Odblokuj PREMIUM – 24,99 zł</button>
+
+  <div style="font-size:12px; margin-bottom:15px; opacity:0.8;">
+    <input type="checkbox" id="acceptTerms" style="margin-right:6px;">
+    Akceptuję 
+    <a href="/regulamin.html" target="_blank" style="color:#7f9db4;">Regulamin</a> 
+    oraz 
+    <a href="/polityka-prywatnosci.html" target="_blank" style="color:#7f9db4;">Politykę prywatności</a>
+  </div>
+
+  <button onclick="startSubscription()">Odblokuj PREMIUM – subskrypcja roczna</button>
+
   <p id="paymentStatus"></p>
 </div>
 
