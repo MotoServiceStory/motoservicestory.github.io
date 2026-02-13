@@ -143,6 +143,35 @@ input, select, textarea {
 }
 
 /* ================================================= */
+/* CHECKBOX ROW – NOWE */
+/* ================================================= */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  margin: 18px 0;
+  line-height: 1.4;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+.checkbox-row a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.checkbox-row a:hover {
+  text-decoration: underline;
+}
+
+/* ================================================= */
 /* BUTTONS */
 /* ================================================= */
 button {
@@ -182,7 +211,7 @@ button {
 }
 
 /* ================================================= */
-/* HISTORY – THIN + EXPAND */
+/* HISTORY */
 /* ================================================= */
 #historyList .card {
   background: transparent;
@@ -195,51 +224,6 @@ button {
 
 #historyList .card:last-child { border-bottom: none; }
 
-#historyList .card i,
-#historyList .card br + * { display: none; }
-
-#historyList .card:focus-within i,
-#historyList .card:focus-within br + * {
-  display: block;
-  margin-top: 12px;
-}
-
-/* ================================================= */
-/* OWNER DATES */
-/* ================================================= */
-#ownerOnly {
-  margin-top: 36px;
-  padding-top: 28px;
-  border-top: 1px solid var(--line-soft);
-}
-
-/* WARNING – ≤30 dni */
-.date-warning #ownerOnly {
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-border);
-  border-radius: 18px;
-  padding: 24px;
-}
-
-/* CRITICAL – ≤7 dni / po terminie */
-.date-critical #ownerOnly {
-  background: var(--danger-bg);
-  border: 1px solid var(--danger-border);
-  border-radius: 18px;
-  padding: 24px;
-}
-
-/* ================================================= */
-/* QR */
-/* ================================================= */
-.qr-box img {
-  display: block;
-  margin: 34px auto 14px;
-  border-radius: 14px;
-  background: #fff;
-  padding: 10px;
-}
-
 /* ================================================= */
 /* LOGOUT */
 /* ================================================= */
@@ -251,6 +235,7 @@ button {
 
 .hidden { display: none; }
 </style>
+
 </head>
 
 <body>
