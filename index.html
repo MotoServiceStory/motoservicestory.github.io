@@ -442,13 +442,51 @@ async function loadVehicles() {
 }
 
 addVehicleBtn.onclick = async () => {
+
+  if (!currentUser) {
+    alert('Brak sesji użytkownika');
+    return;
+  }
+
+  if (!vehicleName.value || !vehicleMileage.value) {
+    alert('Uzupełnij nazwę i przebieg');
+    return;
+  }
+
+  // LIMIT FREE – tylko 1 pojazd
   if (userPlan === 'free') {
-    const { data } = await db.from('vehicles').select('id');
-    if (data.length >= 1) {
+    const { data } = await db
+      .from('vehicles')
+      .select('id')
+      .eq('user_id', currentUser.id);
+
+    if ((data?.length || 0) >= 1) {
       alert('Konto FREE: maksymalnie 1 pojazd');
       return;
     }
   }
+
+  // KLUCZOWA ZMIANA – dodajemy user_id
+  const { error } = await db
+    .from('vehicles')
+    .insert({
+      name: vehicleName.value,
+      current_mileage: vehicleMileage.value,
+      user_id: currentUser.id
+    });
+
+  if (error) {
+    console.error(error);
+    alert('Błąd dodawania pojazdu');
+    return;
+  }
+
+  vehicleName.value = '';
+  vehicleMileage.value = '';
+
+  loadVehicles();
+};
+
 
   await db.from('vehicles').insert({
     name: vehicleName.value,
