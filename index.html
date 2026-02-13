@@ -259,9 +259,19 @@ button {
 
 <div id="login">
   <input id="email" type="email" placeholder="Email">
-  <button id="loginBtn">Zaloguj</button>
+
+  <div style="font-size:12px; margin:15px 0;">
+    <input type="checkbox" id="acceptLoginTerms" style="margin-right:6px;">
+    Akceptuję 
+    <a href="/regulamin.html" target="_blank">Regulamin</a> 
+    oraz 
+    <a href="/polityka-prywatnosci.html" target="_blank">Politykę prywatności</a>
+  </div>
+
+  <button id="loginBtn">Zaloguj (magic link)</button>
   <p id="loginStatus"></p>
 </div>
+
 
 <div id="app" class="hidden">
 
