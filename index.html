@@ -375,6 +375,7 @@ let historyData = [];
 let userPlan = 'free';
 
 /* ===== LOGIN ===== */
+
 loginBtn.onclick = async () => {
 
   const acceptCheckbox = document.getElementById("acceptLoginTerms");
@@ -382,6 +383,13 @@ loginBtn.onclick = async () => {
   // 1️⃣ Sprawdzenie akceptacji regulaminu
   if (!acceptCheckbox || !acceptCheckbox.checked) {
     loginStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
+    loginStatus.style.color = "#ff0000";
+    loginStatus.style.fontWeight = "700";
+    return;
+  }
+
+  if (!email.value) {
+    loginStatus.innerText = "Podaj adres email.";
     loginStatus.style.color = "#ff0000";
     loginStatus.style.fontWeight = "700";
     return;
@@ -398,6 +406,40 @@ loginBtn.onclick = async () => {
   loginStatus.innerText = error ? error.message : "Sprawdź email";
 };
 
+
+
+/* ===== GOOGLE LOGIN ===== */
+
+googleLoginBtn.onclick = async () => {
+
+  const acceptCheckbox = document.getElementById("acceptLoginTerms");
+
+  // 1️⃣ Sprawdzenie akceptacji regulaminu
+  if (!acceptCheckbox || !acceptCheckbox.checked) {
+    loginStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
+    loginStatus.style.color = "#ff0000";
+    loginStatus.style.fontWeight = "700";
+    return;
+  }
+
+  loginStatus.innerText = "Przekierowanie do Google...";
+  loginStatus.style.color = "#ffffff";
+  loginStatus.style.fontWeight = "500";
+
+  const { error } = await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
+
+  if (error) {
+    loginStatus.innerText = "Błąd logowania Google.";
+    loginStatus.style.color = "#ff0000";
+    loginStatus.style.fontWeight = "700";
+    console.error(error);
+  }
+};
 
 /* ===== BOOTSTRAP ===== */
 async function bootstrap() {
