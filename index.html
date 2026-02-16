@@ -536,24 +536,25 @@ button {
   |
   <a href="/polityka-prywatnosci.html" target="_blank" style="color:#aab3bb; text-decoration:none; margin-left:10px;">
     Polityka prywatności
-<script>
+
+    <script>
 const SUPABASE_URL = 'https://thmcpoehpycqfbgpdjyf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWNwb2VocHljcWZiZ3BkanlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4Njc5NTYsImV4cCI6MjA4NDQ0Mzk1Nn0.m4CHKbi6nDSlY_WZdiCZCXKt97tY9uICsbAGSvYHFBw';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let currentVehicleId = null;
-let currentVehicleName = null;
+let currentVehicleName = null; // ← DODAJ TO
 let historyData = [];
 let userPlan = 'free';
 
-
-/* ================= LOGIN ================= */
+/* ===== LOGIN ===== */
 
 loginBtn.onclick = async () => {
 
   const acceptCheckbox = document.getElementById("acceptLoginTerms");
 
+  // 1️⃣ Sprawdzenie akceptacji regulaminu
   if (!acceptCheckbox || !acceptCheckbox.checked) {
     loginStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
     loginStatus.style.color = "#ff0000";
@@ -570,6 +571,7 @@ loginBtn.onclick = async () => {
 
   loginStatus.innerText = "Wysyłanie linku logowania...";
   loginStatus.style.color = "#ffffff";
+  loginStatus.style.fontWeight = "500";
 
   const { error } = await db.auth.signInWithOtp({
     email: email.value
@@ -579,12 +581,14 @@ loginBtn.onclick = async () => {
 };
 
 
-/* ================= GOOGLE LOGIN ================= */
+
+/* ===== GOOGLE LOGIN ===== */
 
 googleLoginBtn.onclick = async () => {
 
   const acceptCheckbox = document.getElementById("acceptLoginTerms");
 
+  // 1️⃣ Sprawdzenie akceptacji regulaminu
   if (!acceptCheckbox || !acceptCheckbox.checked) {
     loginStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
     loginStatus.style.color = "#ff0000";
@@ -592,33 +596,39 @@ googleLoginBtn.onclick = async () => {
     return;
   }
 
+  loginStatus.innerText = "Przekierowanie do Google...";
+  loginStatus.style.color = "#ffffff";
+  loginStatus.style.fontWeight = "500";
+
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin }
+    options: {
+      redirectTo: window.location.origin
+    }
   });
 
   if (error) {
     loginStatus.innerText = "Błąd logowania Google.";
     loginStatus.style.color = "#ff0000";
+    loginStatus.style.fontWeight = "700";
+    console.error(error);
   }
 };
 
-
-/* ================= BOOTSTRAP ================= */
-
+/* ===== BOOTSTRAP ===== */
 async function bootstrap() {
   const { data } = await db.auth.getSession();
   if (data.session?.user) initApp(data.session.user);
 }
 bootstrap();
 
+
 db.auth.onAuthStateChange((_, session) => {
   if (session?.user) initApp(session.user);
 });
 
 
-/* ================= INIT APP ================= */
-
+/* ===== INIT APP ===== */
 async function initApp(user) {
 
   currentUser = user;
@@ -626,11 +636,22 @@ async function initApp(user) {
   login.classList.add('hidden');
   app.classList.remove('hidden');
 
+  // 🔐 Sprawdzenie i zapis akceptacji regulaminu
   const { data: profileData } = await db
     .from("profiles")
-    .select("plan")
+    .select("plan, terms_accepted")
     .eq("id", user.id)
     .single();
+
+  if (!profileData?.terms_accepted) {
+    await db
+      .from("profiles")
+      .update({
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString()
+      })
+      .eq("id", user.id);
+  }
 
   userPlan = profileData?.plan || 'free';
 
@@ -639,25 +660,29 @@ async function initApp(user) {
   loadVehicles();
 }
 
-
-/* ================= VEHICLES ================= */
-
+/* ===== VEHICLES ===== */
 async function loadVehicles() {
 
   const { data: { session } } = await db.auth.getSession();
   if (!session) return;
 
+  const userId = session.user.id;
+
   const { data, error } = await db
     .from('vehicles')
     .select('id, name, current_mileage, inspection_date, insurance_oc_date, insurance_ac_date')
-    .eq('user_id', session.user.id);
+    .eq('user_id', userId);
 
-  if (error) return;
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   vehicles.innerHTML = '';
 
   (data || []).forEach(v => {
 
+    // 🔴 sprawdzamy czy którykolwiek termin <= 30 dni
     const today = new Date();
 
     const dates = [
@@ -705,31 +730,59 @@ async function loadVehicles() {
 }
 
 
+/* ===== DELETE VEHICLE ===== */
 async function deleteVehicle(vehicleId) {
 
-  if (!confirm("Czy na pewno chcesz usunąć pojazd?")) return;
+  const confirmDelete = confirm(
+    "Czy na pewno chcesz usunąć pojazd?\n\nTa operacja usunie również wszystkie wpisy serwisowe."
+  );
 
-  await db.from('vehicles').delete().eq('id', vehicleId);
+  if (!confirmDelete) return;
+
+  const { error } = await db
+    .from('vehicles')
+    .delete()
+    .eq('id', vehicleId);
+
+  if (error) {
+    console.error(error);
+    alert("Błąd usuwania pojazdu");
+    return;
+  }
 
   loadVehicles();
 }
 
 
+
 addVehicleBtn.onclick = async () => {
 
   const { data: { session } } = await db.auth.getSession();
-  if (!session) return;
+
+  if (!session) {
+    alert("Brak sesji użytkownika");
+    return;
+  }
+
+  const userId = session.user.id;
 
   if (!vehicleName.value || !vehicleMileage.value) {
     alert("Uzupełnij nazwę i przebieg");
     return;
   }
 
+  // LIMIT FREE – tylko 1 pojazd
   if (userPlan === 'free') {
-    const { data } = await db
+    const { data, error } = await db
       .from('vehicles')
       .select('id')
-      .eq('user_id', session.user.id);
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error(error);
+      alert("Błąd sprawdzania limitu");
+      return;
+    }
 
     if ((data?.length || 0) >= 1) {
       alert('Konto FREE: maksymalnie 1 pojazd');
@@ -737,33 +790,68 @@ addVehicleBtn.onclick = async () => {
     }
   }
 
-  await db.from('vehicles').insert({
-    name: vehicleName.value,
-    current_mileage: vehicleMileage.value,
-    user_id: session.user.id
-  });
+  const { error } = await db
+    .from('vehicles')
+    .insert({
+      name: vehicleName.value,
+      current_mileage: vehicleMileage.value,
+      user_id: userId
+    });
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
 
   vehicleName.value = '';
   vehicleMileage.value = '';
 
-  loadVehicles();
+  await loadVehicles();
 };
 
 
-/* ================= OPEN VEHICLE ================= */
+/* ===== QR ADD ===== */
+async function generateQR() {
 
+  if (!currentVehicleId) {
+    alert("Brak pojazdu");
+    return;
+  }
+
+  // Pobieramy public_token z bazy
+  const { data: vehicle, error } = await db
+    .from("vehicles")
+    .select("public_token")
+    .eq("id", currentVehicleId)
+    .single();
+
+  if (!vehicle || error) {
+    alert("Nie można pobrać tokenu");
+    return;
+  }
+
+  const publicUrl = `${location.origin}/public.html?token=${vehicle.public_token}`;
+
+  qrBox.innerHTML = `
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(publicUrl)}">
+    <small>Zeskanuj – publiczna historia pojazdu</small>
+    <div style="margin-top:10px;font-size:12px;word-break:break-all;">
+      ${publicUrl}
+    </div>
+  `;
+
+  qrBox.classList.remove('hidden');
+}
+
+/* ===== VEHICLE VIEW ===== */
 function openVehicle(vehicle) {
   currentVehicleId = vehicle.id;
-  currentVehicleName = vehicle.name;
-
+  currentVehicleName = vehicle.name; // ← KLUCZOWA LINIJKA
   vehicleTitle.innerText = vehicle.name;
-
   vehicleListView.classList.add('hidden');
   vehicleView.classList.remove('hidden');
-
   showTab('entry');
-
-  loadVehicleStatus(); // 🔥
 }
 
 
@@ -771,81 +859,263 @@ function closeVehicle() {
   vehicleView.classList.add('hidden');
   vehicleListView.classList.remove('hidden');
 }
+/* ===== HISTORY ===== */
+async function loadHistory() {
+
+  const { data, error } = await db
+    .from('service_reports')
+    .select('*')
+    .eq('vehicle_id', currentVehicleId)
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  historyData = data || [];
+
+  historyList.innerHTML = historyData.map(r => `
+    <div class="card history-row">
+      
+      <div class="history-content">
+        <b>${r.date}</b> – ${r.type}<br>
+        ${r.note || ''}
+      </div>
+
+      <div class="history-delete" onclick="deleteEntry('${r.id}')">
+        🗑
+      </div>
+
+    </div>
+  `).join('');
+}
 
 
-/* ================= STATUS SYSTEM ================= */
+/* ===== DELETE ENTRY ===== */
+async function deleteEntry(entryId) {
+
+  const confirmDelete = confirm("Czy na pewno chcesz usunąć ten wpis?");
+  if (!confirmDelete) return;
+
+  const { error } = await db
+    .from('service_reports')
+    .delete()
+    .eq('id', entryId);
+
+  if (error) {
+    console.error(error);
+    alert("Błąd usuwania wpisu");
+    return;
+  }
+
+  loadHistory();
+}
+
+
+
+/* ===== TABS ===== */
+function showTab(tab) {
+  entryTab.classList.toggle('hidden', tab !== 'entry');
+  historyTab.classList.toggle('hidden', tab !== 'history');
+  if (tab === 'history') loadHistory();
+}
+
+/* ===== ENTRY ===== */
+async function saveEntry() {
+  if (userPlan === 'free') {
+    const { data } = await db
+      .from('service_reports')
+      .select('id')
+      .eq('vehicle_id', currentVehicleId);
+
+    if (data.length >= 2) {
+      alert('Konto FREE: maksymalnie 2 wpisy historii');
+      return;
+    }
+  }
+
+  await db.from('service_reports').insert({
+    vehicle_id: currentVehicleId,
+    type: type.value,
+    title: type.value === 'mechaniczne' ? title.value : null,
+    mileage: mileage.value,
+    date: date.value,
+    note: note.value
+  });
+
+  title.value = mileage.value = date.value = note.value = '';
+  loadHistory();
+}
+
+/* ===== STRIPE ===== */
+async function startSubscription() {
+
+  const acceptCheckbox = document.getElementById("acceptTerms");
+
+  // 1️⃣ Sprawdzenie akceptacji regulaminu
+  if (!acceptCheckbox || !acceptCheckbox.checked) {
+    paymentStatus.innerText = "Musisz zaakceptować Regulamin i Politykę prywatności.";
+    paymentStatus.style.color = "#ff0000";
+    paymentStatus.style.fontWeight = "900";
+    return;
+  }
+
+  // 2️⃣ Informacja o przekierowaniu
+  paymentStatus.innerText = "Przekierowanie do płatności…";
+  paymentStatus.style.color = "#ffffff";
+  paymentStatus.style.fontWeight = "500";
+
+  try {
+
+    const { data, error } = await db.functions.invoke("create_checkout");
+
+    if (error) {
+      console.error(error);
+      paymentStatus.innerText = "Błąd płatności. Spróbuj ponownie.";
+      paymentStatus.style.color = "#ff0000";
+      paymentStatus.style.fontWeight = "900";
+      return;
+    }
+
+    if (data?.url) {
+      location.href = data.url;
+    } else {
+      paymentStatus.innerText = "Nie udało się rozpocząć płatności.";
+      paymentStatus.style.color = "#ff0000";
+      paymentStatus.style.fontWeight = "900";
+    }
+
+  } catch (err) {
+    console.error(err);
+    paymentStatus.innerText = "Wystąpił błąd połączenia.";
+    paymentStatus.style.color = "#ff0000";
+    paymentStatus.style.fontWeight = "900";
+  }
+}
+
+/* ===== PDF DOWNLOAD ===== */
+async function downloadVehiclePdf() {
+  if (!currentVehicleId) {
+    alert('Brak pojazdu');
+    return;
+  }
+
+  // Supabase SDK zajmuje się auth i CORS
+  const { data, error } = await db.functions.invoke(
+    'generate-vehicle-pdf-v2',
+    {
+      body: {
+        vehicle_id: currentVehicleId,
+        vehicle_name: currentVehicleName
+      }
+    }
+  );
+
+  if (error) {
+    console.error('PDF ERROR:', error);
+    alert('Błąd generowania PDF');
+    return;
+  }
+
+  // invoke() zwraca ArrayBuffer dla binary
+  const blob = new Blob([data], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'historia-pojazdu.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+
+
+
+
+/* ===== LOGOUT ===== */
+async function logout() {
+  await db.auth.signOut();
+  location.reload();
+}
+  /* ===== VEHICLE STATUS ===== */
 
 async function loadVehicleStatus() {
 
-  if (!currentVehicleId) return;
-
-  const { data } = await db
+  const { data, error } = await db
     .from('vehicles')
     .select('inspection_date, insurance_oc_date, insurance_ac_date')
     .eq('id', currentVehicleId)
     .single();
 
-  if (!data) return;
+  if (error || !data) return;
 
   document.getElementById("vehicleStatus").classList.remove("hidden");
 
-  document.getElementById("inspectionInput").value = data.inspection_date || "";
-  document.getElementById("ocInput").value = data.insurance_oc_date || "";
-  document.getElementById("acInput").value = data.insurance_ac_date || "";
-
-  updateDot("inspectionDot", data.inspection_date);
-  updateDot("ocDot", data.insurance_oc_date);
-  updateDot("acDot", data.insurance_ac_date);
+  updateStatus("inspection", data.inspection_date);
+  updateStatus("oc", data.insurance_oc_date);
+  updateStatus("ac", data.insurance_ac_date);
 }
 
+function updateStatus(type, dateValue) {
 
-document.addEventListener("change", async function(e) {
+  const dateEl = document.getElementById(
+    type === "inspection" ? "inspectionDate" :
+    type === "oc" ? "ocDate" :
+    "acDate"
+  );
 
-  if (!currentVehicleId) return;
-
-  const map = {
-    inspectionInput: "inspection_date",
-    ocInput: "insurance_oc_date",
-    acInput: "insurance_ac_date"
-  };
-
-  if (!map[e.target.id]) return;
-
-  const column = map[e.target.id];
-
-  await db.from("vehicles")
-    .update({ [column]: e.target.value })
-    .eq("id", currentVehicleId);
-
-  updateDot(e.target.id.replace("Input", "Dot"), e.target.value);
-});
-
-
-function updateDot(dotId, dateValue) {
-
-  const dot = document.getElementById(dotId);
-  if (!dot) return;
+  const dotEl = document.getElementById(
+    type === "inspection" ? "inspectionDot" :
+    type === "oc" ? "ocDot" :
+    "acDot"
+  );
 
   if (!dateValue) {
-    dot.className = "status-dot";
+    dateEl.innerText = "—";
+    dotEl.className = "status-dot";
     return;
   }
 
+  dateEl.innerText = dateValue;
+
   const today = new Date();
-  const diff = Math.ceil((new Date(dateValue) - today) / (1000 * 60 * 60 * 24));
+  const target = new Date(dateValue);
 
-  dot.className = diff <= 30 ? "status-dot alert" : "status-dot ok";
+  // różnica w dniach
+  const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+
+  if (diff <= 30) {
+    dotEl.className = "status-dot alert";
+  } else {
+    dotEl.className = "status-dot ok";
+  }
 }
 
+async function setDate(type) {
 
-/* ================= LOGOUT ================= */
+  const value = prompt("Podaj datę (YYYY-MM-DD)");
+  if (!value) return;
 
-async function logout() {
-  await db.auth.signOut();
-  location.reload();
+  const column =
+    type === "inspection" ? "inspection_date" :
+    type === "oc" ? "insurance_oc_date" :
+    "insurance_ac_date";
+
+  const { error } = await db
+    .from("vehicles")
+    .update({ [column]: value })
+    .eq("id", currentVehicleId);
+
+  if (!error) {
+    loadVehicleStatus();
+  }
 }
+      
 </script>
-
 
 </body>
 </html>
