@@ -309,6 +309,51 @@ button {
   border: 1px solid var(--danger-border);
   color: var(--danger-border);
 }
+/* ================= STATUS BOX ================= */
+
+.status-box {
+  margin-bottom: 25px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line-soft);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.status-row:last-child {
+  margin-bottom: 0;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #555;
+  margin: 0 10px;
+  transition: 0.2s ease;
+}
+
+.status-dot.ok {
+  background: #2ecc71;
+}
+
+.status-dot.alert {
+  background: #ff3b3b;
+}
+
+.status-row button {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 12px;
+}
 
 .hidden { display: none; }
 </style>
