@@ -649,7 +649,7 @@ async function loadVehicles() {
 
   const { data, error } = await db
     .from('vehicles')
-    .select('*')
+    .select('id, name, current_mileage, inspection_date, insurance_oc_date, insurance_ac_date')
     .eq('user_id', userId);
 
   if (error) {
@@ -660,9 +660,38 @@ async function loadVehicles() {
   vehicles.innerHTML = '';
 
   (data || []).forEach(v => {
+
+    // 🔴 sprawdzamy czy którykolwiek termin <= 30 dni
+    const today = new Date();
+
+    const dates = [
+      v.inspection_date,
+      v.insurance_oc_date,
+      v.insurance_ac_date
+    ].filter(Boolean);
+
+    let alert = false;
+
+    dates.forEach(d => {
+      const diff = Math.ceil((new Date(d) - today) / (1000 * 60 * 60 * 24));
+      if (diff <= 30) alert = true;
+    });
+
+    const statusDot = `
+      <span style="
+        display:inline-block;
+        width:8px;
+        height:8px;
+        border-radius:50%;
+        margin-left:8px;
+        background:${alert ? '#ff3b3b' : '#2ecc71'};
+      "></span>
+    `;
+
     vehicles.innerHTML += `
       <div class="card">
-        <b>${v.name}</b> (${v.current_mileage} km)<br>
+        <b>${v.name}</b>${statusDot}
+        (${v.current_mileage} km)<br>
 
         <div style="margin-top:10px; display:flex; gap:10px;">
           <button onclick="openVehicle(${JSON.stringify(v).replace(/"/g,'&quot;')})">
