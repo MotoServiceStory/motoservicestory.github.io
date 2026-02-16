@@ -362,6 +362,15 @@ button {
   border-radius: 12px;
 }
 
+.date-input {
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--line-soft);
+  color: var(--text-main);
+}
 
 .hidden { display: none; }
 </style>
@@ -444,37 +453,34 @@ button {
   <h3 id="vehicleTitle"></h3>
 
 
-  <!-- STATUS BOX -->
-  <div id="vehicleStatus" class="status-box">
+ <!-- STATUS BOX -->
+<div id="vehicleStatus" class="status-box">
 
-    <div class="status-row">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <strong>PT</strong>
-        <span id="inspectionDate">—</span>
-        <span id="inspectionDot" class="status-dot"></span>
-      </div>
-      <button class="mini-btn" onclick="setDate('inspection')">Ustaw</button>
-    </div>
+  <div class="status-row">
+    <strong>PT</strong>
 
-    <div class="status-row">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <strong>OC</strong>
-        <span id="ocDate">—</span>
-        <span id="ocDot" class="status-dot"></span>
-      </div>
-      <button class="mini-btn" onclick="setDate('oc')">Ustaw</button>
-    </div>
+    <input type="date" id="inspectionInput" class="date-input">
 
-    <div class="status-row">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <strong>AC</strong>
-        <span id="acDate">—</span>
-        <span id="acDot" class="status-dot"></span>
-      </div>
-      <button class="mini-btn" onclick="setDate('ac')">Ustaw</button>
-    </div>
-
+    <span id="inspectionDot" class="status-dot"></span>
   </div>
+
+  <div class="status-row">
+    <strong>OC</strong>
+
+    <input type="date" id="ocInput" class="date-input">
+
+    <span id="ocDot" class="status-dot"></span>
+  </div>
+
+  <div class="status-row">
+    <strong>AC</strong>
+
+    <input type="date" id="acInput" class="date-input">
+
+    <span id="acDot" class="status-dot"></span>
+  </div>
+
+</div>
 
 
   <!-- ACTION BUTTONS -->
