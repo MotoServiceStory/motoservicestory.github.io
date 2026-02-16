@@ -674,7 +674,6 @@ function closeVehicle() {
   vehicleView.classList.add('hidden');
   vehicleListView.classList.remove('hidden');
 }
-
 /* ===== HISTORY ===== */
 async function loadHistory() {
 
@@ -692,17 +691,17 @@ async function loadHistory() {
   historyData = data || [];
 
   historyList.innerHTML = historyData.map(r => `
-    <div class="card">
-      <b>${r.date}</b> – ${r.type}<br>
-      ${r.note || ''}
-
-      <div style="margin-top:12px;">
-        <button 
-          onclick="deleteEntry('${r.id}')" 
-          style="background:#1a0f12;border:1px solid #ff3b3b;color:#ff3b3b;">
-          Usuń wpis
-        </button>
+    <div class="card history-row">
+      
+      <div class="history-content">
+        <b>${r.date}</b> – ${r.type}<br>
+        ${r.note || ''}
       </div>
+
+      <div class="history-delete" onclick="deleteEntry('${r.id}')">
+        🗑
+      </div>
+
     </div>
   `).join('');
 }
@@ -712,7 +711,6 @@ async function loadHistory() {
 async function deleteEntry(entryId) {
 
   const confirmDelete = confirm("Czy na pewno chcesz usunąć ten wpis?");
-
   if (!confirmDelete) return;
 
   const { error } = await db
@@ -728,6 +726,7 @@ async function deleteEntry(entryId) {
 
   loadHistory();
 }
+
 
 
 /* ===== TABS ===== */
